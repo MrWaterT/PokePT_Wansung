@@ -5,6 +5,22 @@ const choseongs = "ㄱㄲㄴㄷㄸㄹㅁㅂㅃㅅㅆㅇㅈㅉㅊㅋㅌㅍㅎ";
 const jungseongs = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢㅣ";
 const jongseongs = " ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ";
 
+const isCho = (source: number, target: string) => {
+  return Array.from(target).some((glyph: string) => {
+    return choseongs.indexOf(glyph) == source;
+  });
+}
+const isJung = (source: number, target: string) => {
+  return Array.from(target).some((glyph: string) => {
+    return jungseongs.indexOf(glyph) == source;
+  });
+}
+const isJong = (source: number, target: string) => {
+  return Array.from(target).some((glyph: string) => {
+    return jongseongs.indexOf(glyph) == source;
+  });
+}
+
 const setComponents = (project: Project, r: number, c: number, ptr: number, templateID: string, type: "choseong" | "jungseong" | "jongseong") => {
   let components:  Array<Array<number>> = [];
   let s = "";
@@ -81,24 +97,31 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
   const jongTypes = [0, 1, 0, 1, 0, 1, 0, 1, 2, 1, 1, 1, 2, 4, 1, 1, 0, 4, 4, 1, 0];
 
   const choType = (cho: number, jung: number, jong: number) => {
-    if (jung == 4 || jung == 6) { // ㅓ ㅕ
-      return (jong==0? 0: 11);
-    }
-    if (jong == 0) {
-      if (cho == 16 && jung == 5) { return 14; } // 테
+    if (isJong(jong," ")) { /* 받침없음 */
+      /* ㅓㅕ */
+      if (isCho(cho,"ㄹ") && isJung(jung,"ㅓ")) { return 1; } // 러
+      if (isJung(jung,"ㅓㅕ")) { return 0; } // 받침없는 ㅓㅕ
+
+      /* ㅔ */
+      if (isCho(cho,"ㅌ") && isJung(jung,"ㅔ")) { return 14; } // 테
+
+      /* 예외처리 끝 */
       return choTypes[jung];
     }
-    else {
-      if (cho == 3 && jung == 9 && (jong == 4 || jong == 9)) { // 돤돳
-        return 7;
-      }
-      if (cho == 3 && jong == 25) { // 돝
-        return 14;
-      }
-      if (jung == 13 || jung == 17) { // ㅗㅛ 한인덱스 앞으로
-        return 13; // 3+10
+    else { /* 받침있음 */
+      /* ㅓㅕ */
+      if (isJung(jung,"ㅓㅕ")) { return 11; } // 받침있는 ㅓㅕ
+
+      /* ㄷ */
+      if (isCho(cho,"ㄷ")) {
+        if (isJung(jung,"ㅘ") && isJong(jong,"ㄴㅅ")) { return 7; } // 돤돳
+        if (isJung(jung,"ㅗ") && isJong(jong,"ㅌ")) { return 14; } // 돝
       }
 
+      /* ㅗㅛ */
+      if (isJung(jung,"ㅜㅠ")) { return 3 + 10; } // +11대신 10을 사용
+
+      /* 예외처리 끝 */
       return 10 + choTypes[jung];
     }
   }
@@ -161,6 +184,8 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
   }
 
   const jongType = (cho: number, jung: number, jong: number) => {
+     if (isCho(cho,"ㄷ") && isJung(jung,"ㅞㅟ") && isJong(jong, "ㅌ")) { return 5; } // 뒡뒽
+
     if (jongTypes[jung] == 2) { // ㅗ ㅛ를 초성에 따라 분리
       //      ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
       return [2, 2, 3, 3, 3, 3, 3, 3, 3, 2, 2, 3, 3, 2, 3, 2, 3, 3, 3][cho];
@@ -188,7 +213,7 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
 }, {
   choseong: [
     "받침 없는 [ㅏ ㅑ ㅣ ㅓ ㅕ]",
-    "받침 없는 [ㅐ ㅒ ㅔ ㅖ]",
+    "받침 없는 [ㅐ ㅒ ㅔ ㅖ], 러",
     "받침 없는 [ㅗ ㅛ]",
     "받침 없는 [ㅡ]",
     "받침 없는 [ㅜ ㅠ]",
