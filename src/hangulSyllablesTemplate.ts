@@ -84,7 +84,10 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
     if (jung == 4 || jung == 6) { // ㅓ ㅕ
       return (jong==0? 0: 11);
     }
-    if (jong == 0) { return choTypes[jung]; }
+    if (jong == 0) {
+      if (cho == 16 && jung == 5) { return 14; } // 테
+      return choTypes[jung];
+    }
     else {
       if (cho == 3 && jung == 9 && (jong == 4 || jong == 9)) { // 돤돳
         return 7;
@@ -102,6 +105,9 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
 
   const jungType = (cho: number, jung: number, jong: number) => {
     if (jong == 0) { // 받침없음
+      if (cho == 16 && jung == 5) { return 0; } // 테
+      if (jung == 13 && (cho == 3 || cho == 17)) { return 1; } // 두푸
+      if (cho == 18 && jung == 8) { return 2; } // 호
       //      ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
       return [0, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1][cho];
     }
@@ -196,7 +202,7 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
     "받침 있는 [ㅐ ㅒ ㅓ ㅔ ㅕ ㅖ]",
     "받침 있는 [ㅗ ㅛ]",
     "받침 있는 [ㅜㅠㅡ]",
-    "[ㅗㅚㅜㅠㅡ]와 높은받침 결합 낮은초성",
+    "[ㅗㅚㅜㅠㅡ]와 높은받침 결합 낮은초성, 테",
     "받침 있는 [ㅘ ㅚ]",
     "받침 있는 [ㅙ],",
     "받침 있는 [ㅝ ㅟ]",
@@ -204,9 +210,9 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
     "받침 있는 [ㅢ]"
   ],
   jungseong: [
-    "받침 없는 초성 [ㄱ] 결합", // 짧은ㅖ
-    "받침 없는 초성 [ㄸ ㄹ ㅆ ㅌ ㅎ] 결합",
-    "그 외 받침 없음", // 긴ㅕ
+    "받침 없는 초성 [ㄱ] 결합, 테", // 짧은ㅖ
+    "받침 없는 초성 [ㄸ ㄹ ㅆ ㅌ ㅎ] 결합, 두푸",
+    "그 외 받침 없음, 호", // 긴ㅕ
     "받침 [ㄴ ㅅ]과 초성 [ㄱ] 결합", // 낮은ㅓ 높은ㅗ
     "받침 [ㄴ ㅅ]과 초성 [ㄲ ㅋ] 결합", // 안뭐더라 높은 ㅗ
     "받침 [ㄴ ㅅ]과 초성 [ㄷ ㄸ ㅍ] 결합", // 뭐더라 
