@@ -6,19 +6,13 @@ const jungseongs = "ㅏㅐㅑㅒㅓㅔㅕㅖㅗㅘㅙㅚㅛㅜㅝㅞㅟㅠㅡㅢ
 const jongseongs = " ㄱㄲㄳㄴㄵㄶㄷㄹㄺㄻㄼㄽㄾㄿㅀㅁㅂㅄㅅㅆㅇㅈㅊㅋㅌㅍㅎ";
 
 const isCho = (source: number, target: string) => {
-  return Array.from(target).some((glyph: string) => {
-    return choseongs.indexOf(glyph) == source;
-  });
+  return Array.from(target).some((glyph: string) => glyph!=" " && choseongs.indexOf(glyph) == source);
 }
 const isJung = (source: number, target: string) => {
-  return Array.from(target).some((glyph: string) => {
-    return jungseongs.indexOf(glyph) == source;
-  });
+  return Array.from(target).some((glyph: string) => glyph!=" " && jungseongs.indexOf(glyph) == source);
 }
 const isJong = (source: number, target: string) => {
-  return Array.from(target).some((glyph: string) => {
-    return jongseongs.indexOf(glyph) == source;
-  });
+  return Array.from(target).some((glyph: string) => jongseongs.indexOf(glyph) == source);
 }
 
 const setComponents = (project: Project, r: number, c: number, ptr: number, templateID: string, type: "choseong" | "jungseong" | "jongseong") => {
@@ -118,7 +112,12 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
         if (isJung(jung,"ㅗ") && isJong(jong,"ㅌ")) { return 14; } // 돝
       }
 
-      /* ㅗㅛ */
+      /* ㅈ */
+      if (isCho(cho,"ㅈ")) {
+        if (isJung(jung,"ㅗㅛㅜㅠㅡ") && isJong(jong,"ㄹㅌ")) { return 14; } // 졸죨줄쥴즐좉죹줕즅즡
+      }
+
+      /* ㅜㅠ */
       if (isJung(jung,"ㅜㅠ")) { return 3 + 10; } // +11대신 10을 사용
 
       /* 예외처리 끝 */
@@ -127,74 +126,80 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
   }
 
   const jungType = (cho: number, jung: number, jong: number) => {
-    if (jong == 0) { // 받침없음
-      if (cho == 16 && jung == 5) { return 0; } // 테
-      if (jung == 13 && (cho == 3 || cho == 17)) { return 1; } // 두푸
-      if (cho == 18 && jung == 8) { return 2; } // 호
+    if (isJong(jong," ")) { /* 받침없음 */
+      if (isCho(cho,"ㄷ") && isJung(jung,"ㅜ")) { return 1; } // 두
+      if (isCho(cho,"ㅌ") && isJung(jung,"ㅔ")) { return 0; } // 테
+      if (isCho(cho,"ㅍ") && isJung(jung,"ㅜㅓ")) { return 1; } // 푸퍼
+      if (isCho(cho,"ㅎ") && isJung(jung,"ㅗ")) { return 2; } // 호
+
+      /* 예외처리 끝 */
       //      ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
       return [0, 2, 2, 2, 1, 1, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 1, 2, 1][cho];
     }
+    else { /* 받침있음 */
+      if (isCho(cho,"ㅁ")         && isJung(jung,"ㅘ  ㅝ")) { return 11; } // 뫅-뫟뭑-뭫
+      if (isCho(cho,"ㄹㅆㅇ")     && isJung(jung,  "ㅙㅝ")) { return 11; } // 뢕-뢯뤅-뤟쐑-쐫쒁-쒛왝-왷웍-웧
+      if (isCho(cho,    "ㅇ")     && isJung(jung,"ㅘ"    ) && !isJong(jong,"ㄴㅅ")) { return 11; } // 왁왂왇-왈왕-왛
+      if (isCho(cho,"ㅂ")         && isJung(jung,  "ㅙ"  )) { return 11; } // 봭-뵇
+      if (isCho(cho,"ㅂ")         && isJung(jung,    "ㅝ") && !isJong(jong,"ㄴㅅ")) { return 11; } // 붝붞붣-붤붱-붷
+      if (isCho(cho,"ㅊㅋㅌㅍㅎ") && isJung(jung,    "ㅝ")) { return 11; } // 춱-췋쿽-퀗퉉-퉣풕-풯훡-훻
 
-    if (cho == 6 && jung == 9) { // 뫅-뫟
-      return 11;
-    }
-    if ((cho == 5 || cho == 7 || cho == 10 || cho == 11) && jung == 10) { // 뢕-뢯, 봭-뵇, 쐑-쐫, 왝-왷
-      return 11;
-    }
-    if ((cho == 5 || cho == 6 || (cho == 7 && jong != 4 && jong != 19) || cho == 10 || cho == 11 || cho >= 14) && jung == 14) { // 뤅-뤟 뭑-뭫, 붝붞붣-붤,붱-붷, 쒁-쒛, 웍-웧, 춱-췋, 쿽-퀗, 퉉-퉣, 풕-풯, 훡-훻
-      return 11;
-    }
-    if ((cho == 2 || cho == 5 || cho == 6 || cho == 7 || cho == 11) && jung == 11) { // 뇍-뇧, 뢱-룋, 뫽-묗, 뵉-뵣, 왹-욓
-      return 11;
-    }
-    if (cho == 3 && (jong == 8 || jong == 7) && jung == 11) { // 될 or 됩
-      return 11;
-    }
-    if (cho == 18 && jung == 19) { // 흭-힇
-      return 11;
-    }
-
-    if (jong == 4 || jong == 19) { // ㄴ ㅅ 받침
-      //      ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
-      return [3, 4, 7, 5, 5, 7, 7, 7, 7, 6, 6, 7, 7, 6, 7, 4, 7, 5, 7][cho];
-    }
-    else { // 그 외 받침
-      if (jung == 8 || jung == 11 || jung == 12 || jung == 13 || jung == 17 || jung == 18) { // ㅗ ㅚ ㅛ ㅡ ㅜ ㅠ를 종성과 초성에 따라 분리
-        if (cho == 11 && jung == 18) {
-          // 으+ㅁㅇㅈㅍ 예외처리
-          if (jong == 16 || jong == 21 || jong == 22 || jong == 26) { return 9; }
-        }
-
-        let j = 10;
-        if (jung == 8) { // ㅗ에서 높은종성
-          if (cho == 3 && jong == 25) { // 돝
-            return 9;
-          }
-        }
-        if (jung == 13 || jung == 17 || jung == 18) { // ㅜ ㅠ ㅡ에서 높은종성결합 탐색
-          //      ㄱ ㄲ ㄳ ㄴ ㄵ ㄶ ㄷ ㄹ ㄺ ㄻ ㄼ ㄽ ㄾ ㄿ ㅀ ㅁ ㅂ ㅄ ㅅ ㅆ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ
-          j = [0,10, 9, 9,10, 9, 9,10, 9, 9, 9, 9, 9, 9, 9, 9,10, 9, 9,10, 9,10,10, 9, 9, 9,10, 9][jong]; // jongTypes
-        }
-        
-        //      ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
-        return [8, 8, j, j, j, j, j, j, j, 9, 9, j, j, 9, j, 8, j, j, j][cho];
+      if ((cho == 2 || cho == 5 || cho == 6 || cho == 7 || cho == 11) && jung == 11) { // 뇍-뇧, 뢱-룋, 뫽-묗, 뵉-뵣, 왹-욓
+        return 11;
       }
-      else { return 12; }
+      if (cho == 3 && (jong == 8 || jong == 7) && jung == 11) { // 될 or 됩
+        return 11;
+      }
+      if (cho == 18 && jung == 19) { // 흭-힇
+        return 11;
+      }
+
+      if (jong == 4 || jong == 19) { // ㄴ ㅅ 받침
+        //      ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
+        return [3, 4, 7, 5, 5, 7, 7, 7, 7, 6, 6, 7, 7, 6, 7, 4, 7, 5, 7][cho];
+      }
+      else { // 그 외 받침
+        if (jung == 8 || jung == 11 || jung == 12 || jung == 13 || jung == 17 || jung == 18) { // ㅗ ㅚ ㅛ ㅡ ㅜ ㅠ를 종성과 초성에 따라 분리
+          if (cho == 11 && jung == 18) {
+            // 으+ㅁㅇㅈㅍ 예외처리
+            if (jong == 16 || jong == 21 || jong == 22 || jong == 26) { return 9; }
+          }
+
+          /* ㅗㅛ */
+          if (isCho(cho,"ㄷ") && isJung(jung,"ㅗ") && isJong(jong,"ㅌ")) { return 9; } // 돝
+          if (isCho(cho,"ㅈ") && isJung(jung,"ㅗㅛ") && isJong(jong,"ㄹㅌ")) { return 9; } // 졸죨좉죹
+
+          let j = 10;
+          if (jung == 13 || jung == 17 || jung == 18) { // ㅜ ㅠ ㅡ에서 높은종성결합 탐색
+            //      ㄱ ㄲ ㄳ ㄴ ㄵ ㄶ ㄷ ㄹ ㄺ ㄻ ㄼ ㄽ ㄾ ㄿ ㅀ ㅁ ㅂ ㅄ ㅅ ㅆ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ
+            j = [0,10, 9, 9,10, 9, 9,10, 9, 9, 9, 9, 9, 9, 9, 9,10, 9, 9,10, 9,10,10, 9, 9, 9,10, 9][jong]; // jongTypes
+          }
+
+          //      ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
+          return [8, 8, j, j, j, j, j, j, j, 9, 9, j, j, 9, j, 8, j, j, j][cho];
+        }
+        else { return 12; }
+      }
     }
   }
 
   const jongType = (cho: number, jung: number, jong: number) => {
-     if (isCho(cho,"ㄷ") && isJung(jung,"ㅞㅟ") && isJong(jong, "ㅌ")) { return 5; } // 뒡뒽
+    if (isCho(cho,"ㄷ") && isJung(jung,"ㅛ") && isJong(jong, "ㅌ")) { return 4; } // 둍
+    if (isCho(cho,"ㄷ") && isJung(jung,"ㅞㅟ") && isJong(jong, "ㅌ")) { return 5; } // 뒡뒽
 
-    if (jongTypes[jung] == 2) { // ㅗ ㅛ를 초성에 따라 분리
-      //      ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
-      return [2, 2, 3, 3, 3, 3, 3, 3, 3, 2, 2, 3, 3, 2, 3, 2, 3, 3, 3][cho];
+    if (jongTypes[jung] == 0) { // ㅏㅑㅓㅕㅟㅣ
+      return 0;
+    }
+    else if (jongTypes[jung] == 1) { // ㅐㅒㅔㅖㅘㅙㅚㅝㅞㅢ
+      if (isCho(cho,"ㅇ") && isJung(jung,"ㅘ") && isJong(jong,"ㄱㄷㅁㅆㅇㅈㅌㅍ")) { return 6; } // 왁왇왐왕왔왖왙왚
+      return 1;
+    }
+    else if (jongTypes[jung] == 2) { // ㅗ ㅛ를 초성에 따라 분리
+      if (isCho(cho,"ㄱㄲㅅㅆㅉㅋ")) { return 2; }
+      else { return 3; }
     }
     else if (jongTypes[jung] == 4) { // ㅜ ㅠ ㅡ를 초성과 종성에 따라 분리
-      if (cho == 11 && jung == 18) {
-        // 으+ㅁㅇㅈㅍ 예외처리
-        if (jong == 16 || jong == 21 || jong == 22 || jong == 26) { return 4; }
-      }
+      if (isCho(cho,"ㅇ") && isJung(jung,"ㅡ") && isJong(jong,"ㅁㅇㅈㅍ")) { return 4; } // 음응읒읖
 
       //       ㄱ ㄲ ㄴ ㄷ ㄸ ㄹ ㅁ ㅂ ㅃ ㅅ ㅆ ㅇ ㅈ ㅉ ㅊ ㅋ ㅌ ㅍ ㅎ
       let c = [4, 4, 5, 5, 5, 5, 5, 5, 5, 4, 4, 5, 5, 4, 5, 4, 5, 5, 5][cho]; // choTypes
@@ -202,7 +207,6 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
       //         ㄱ ㄲ ㄳ ㄴ ㄵ ㄶ ㄷ ㄹ ㄺ ㄻ ㄼ ㄽ ㄾ ㄿ ㅀ ㅁ ㅂ ㅄ ㅅ ㅆ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ
       return [0, c, 4, 4, c, 4, 4, c, 4, 4, 4, 4, 4, 4, 4, 4, c, 4, 4, c, 4, c, c, 4, 4, 4, c, 4][jong];
     }
-    return jongTypes[jung];
   }
 
   return [
@@ -236,7 +240,7 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
   ],
   jungseong: [
     "받침 없는 초성 [ㄱ] 결합, 테", // 짧은ㅖ
-    "받침 없는 초성 [ㄸ ㄹ ㅆ ㅌ ㅎ] 결합, 두푸",
+    "받침 없는 초성 [ㄸ ㄹ ㅆ ㅌ ㅎ] 결합, 두푸퍼",
     "그 외 받침 없음, 호", // 긴ㅕ
     "받침 [ㄴ ㅅ]과 초성 [ㄱ] 결합", // 낮은ㅓ 높은ㅗ
     "받침 [ㄴ ㅅ]과 초성 [ㄲ ㅋ] 결합", // 안뭐더라 높은 ㅗ
@@ -244,7 +248,7 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
     "받침 [ㄴ ㅅ]과 초성 [ㅅ ㅆ ㅉ] 결합", // 뭐더라 높은 ㅗ
     "받침 [ㄴ ㅅ]과 그 외 결합", // 안뭐더라
     "그 외 받침과 초성 [ㄱㄲㅋ]결합 [ㅗㅚㅛㅜㅠㅡ]", // 긴ㅗ 높은ㅚㅛㅜㅠㅡ 
-    "그 외 높은종성결합 [ㅡㅗ] 또는 초성[ㅅㅆㅉ]결합 [ㅗㅚㅛㅜㅠㅡ]", // 높은ㅗㅚㅛㅜㅠㅡ
+    "그 외 높은종성결합 [ㅡㅗ]\n\n또는 초성[ㅅㅆㅉ]결합 [ㅗㅚㅛㅜㅠㅡ]\n\n또는 높은종성과 초성[ㅈ] 결합 [ㅗㅛ]", // 높은ㅗㅚㅛㅜㅠㅡ
     "그 외 낮은종성 또는 그 외 초성결합 [ㅗㅚㅛㅡ]",
     "일부 낮은종성과 높은초성결합 [ㅘㅙㅚㅝㅢ]",
     "그 외 받침과 그 외 중성",
@@ -256,7 +260,7 @@ const hangulTemplatePokePT = new HangulTemplate("POKE_PT", 20, 13, 7, (cho, jung
     "그 외 초성과 중성 [ㅗ ㅛ] 결합",
     "초성[ㄱㄲㅋㅅㅆㅉ]결합 또는 높은종성결합 중성[ㅜㅠㅡ]", // 높은ㅡ
     "낮은종성[ㄱㄴㄷㅁㅅㅇㅈㅍ]결합 중성[ㅜㅠㅡ]",
-    "더미",
+    "일부 낮은종성[ㄱㄷㅁㅆㅇㅈㅌㅍ]결합 초성 [ㅇ]과 중성 [ㅘ]", // 낮은ㅘ
   ],
 })
 
